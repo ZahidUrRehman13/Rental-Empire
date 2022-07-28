@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'screens/homescreen,dart.dart';
+import 'screens/homescreen.dart';
 
 void main() => runApp(MyApp());
 
