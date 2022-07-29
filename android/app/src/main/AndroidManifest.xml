@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.BLUETOOTH"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <queries>
         <intent>
             <action android:name="android.speech.RecognitionService" />
@@ -40,5 +42,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+       <meta-data android:name="com.google.android.geo.API_KEY"
+           android:value="AIzaSyAdTVcCmEfa3BbkGHe8SK2EFjtM66v1CO8"/>
+
     </application>
 </manifest>
+
+<!--<meta-data android:name="com.google.android.geo.API_KEY"-->
+<!--android:value="AIzaSyCfXnfJAD4JnbM5JjF8zRD4HxW_0cc1MLU"/>-->

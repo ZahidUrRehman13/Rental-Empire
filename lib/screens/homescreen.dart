@@ -10,6 +10,8 @@ import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:translation_rental/MapDirectry/location_screen.dart';
+import 'package:translation_rental/MapDirectry/rela_time_locations.dart';
 import 'package:translation_rental/models/language_model_class.dart';
 import 'package:translation_rental/widgets/ChooseLanguage.dart';
 import 'package:translator/translator.dart';
@@ -143,7 +145,12 @@ class _HomePageState extends State<HomePage>
                       context: context,
                       builder: (BuildContext context) => _rating());
                 },
-                icon: const Icon(Icons.star_rate))
+                icon: const Icon(Icons.star_rate)),
+            IconButton(
+                onPressed: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (context)=> const RealTimeLocationScreen()));
+                },
+                icon: const Icon(Icons.pin_drop_outlined))
           ],
         ),
       ),

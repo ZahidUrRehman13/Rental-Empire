@@ -46,7 +46,13 @@ dependencies:
   avatar_glow: ^1.2.0
   fluttertoast: ^8.0.9
   flutter_rating_bar: ^4.0.1
-
+  google_maps_flutter: ^2.1.10
+  geolocator: ^9.0.1
+  geocoder: ^0.2.1
+  permission_handler: ^10.0.0
+  location: ^4.4.0
+  flutter_polyline_points: ^1.0.0
+  flutter_google_places: ^0.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
