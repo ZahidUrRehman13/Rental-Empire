@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoder/geocoder.dart';
+import 'package:geocoding/geocoding.dart' as g;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ import 'package:google_api_headers/google_api_headers.dart';
 
 import 'map_pin_pill.dart';
 
-const double CAMERA_ZOOM = 13;
+const double CAMERA_ZOOM = 16;
 const double CAMERA_TILT = 80;
 const double CAMERA_BEARING = 30;
 
@@ -37,7 +38,7 @@ final searchScaffoldKey = GlobalKey<ScaffoldState>();
 class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
 
   LatLng SOURCE_LOCATION = LatLng(42.747932, -71.167889);
-  LatLng DEST_LOCATION = LatLng(33.60039,73.062823);
+  LatLng DEST_LOCATION = LatLng(33.660012,73.083322);
 
   final Completer<GoogleMapController> _controller = Completer();
   GoogleMapController? mapController;
@@ -49,6 +50,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
   String googleAPIKey = "AIzaSyAdTVcCmEfa3BbkGHe8SK2EFjtM66v1CO8";
   Set<Marker> markers = {}; //markers for google map
   Map<PolylineId, Polyline> polylines = {};
+  final Set<Polyline> _polyline = {};
 
   List<LatLng> polylineCoordinates = [];
   // PolylinePoints? polylinePoints;
@@ -75,11 +77,12 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
 
   double distance = 0.0;
 
-  Mode _mode = Mode.overlay;
 
   places.GoogleMapsPlaces _places = places.GoogleMapsPlaces(apiKey: kGoogleApiKey);
 
   String placeSelected="";
+
+  String _address = "";
 
   @override
   void initState() {
@@ -101,7 +104,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
     // set custom marker pins
     setSourceAndDestinationIcons();
     // set the initial location
-    setInitialLocation();
+
   }
 
   void setSourceAndDestinationIcons() async {
@@ -127,6 +130,27 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
     destinationLocation = LocationData.fromMap({
       "latitude": DEST_LOCATION.latitude,
       "longitude": DEST_LOCATION.longitude
+    });
+    showPinsOnMap();
+  }
+
+  void _getPlace() async {
+    List<g.Placemark> newPlace = await g.placemarkFromCoordinates(currentLocation!.latitude!, currentLocation!.longitude!);
+
+    // this is all you need
+    g.Placemark placeMark  = newPlace[0];
+    String? name = placeMark.name;
+    String? subLocality = placeMark.subLocality;
+    String? locality = placeMark.locality;
+    String? administrativeArea = placeMark.administrativeArea;
+    String? postalCode = placeMark.postalCode;
+    String? country = placeMark.country;
+    String? address = "${name}, ${subLocality}, ${locality}, ${administrativeArea} ${postalCode}, ${country}";
+
+    print('Addresscall $address');
+
+    setState(() {
+      _address = address; // update _address
     });
   }
 
@@ -158,6 +182,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
                 tiltGesturesEnabled: false,
                 markers: _markers,
                 polylines:  Set<Polyline>.of(polylines.values),
+                // polylines:  _polyline,
                 mapType: MapType.normal,
                 initialCameraPosition: initialCameraPosition,
                 onTap: (LatLng loc) {
@@ -165,23 +190,30 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
                 },
                 onMapCreated: (GoogleMapController controller) {
                   // controller.setMapStyle(Utils.mapStyles);
-                  _controller.complete(controller);
+                  setState(() {
+                    // if(placeSelected!=""){
+                      _controller.complete(controller);
+                    // }
+
+                    // mapController=controller;
+                    // showPinsOnMap();
+                  });
                   // my map has completed being created;
                   // i'm ready to show the pins on the map
-                  showPinsOnMap();
-                }),
 
-            MapPinPillComponent(
-                pinPillPosition: pinPillPosition,
-                currentlySelectedPin: currentlySelectedPin),
+                }
+
+                ),
+
+
             Positioned(
-                bottom: 200,
-                left: 50,
+                bottom: height*0.05,
+                left: width*0.25,
                 child: Card(
                   child: Container(
                       padding: const EdgeInsets.all(20),
                       child: Text("Total Distance: ${distance.toStringAsFixed(2)} KM",
-                          style: const TextStyle(fontSize: 20, fontWeight:FontWeight.bold))
+                          style: const TextStyle(fontSize: 15, fontWeight:FontWeight.bold))
                   ),
                 )
             ),
@@ -202,128 +234,95 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
                 padding: EdgeInsets.only(left: width*0.23,top: 10),
                 child: Container(
                     width: width*0.6,
-                    height: height*0.07,
+                    height: height*0.08,
 
                     decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(5),
                         color: Colors.white
                     ),
                     child:  Center(child: Expanded(
-                      child: Text(placeSelected == "" ?'Pick Destination address':placeSelected,style: const TextStyle(
-                        fontWeight: FontWeight.bold
-                      ),),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(placeSelected == "" ?'Pick Destination address':placeSelected,style: const TextStyle(
+                          fontWeight: FontWeight.bold
+                        ),),
+                      ),
                     ))
                 ),
               ),
-            )
+            ),
+            MapPinPillComponent(
+              pinPillPosition: pinPillPosition,
+              currentlySelectedPin: currentlySelectedPin,
+              source: _address,
+              destination: placeSelected,),
+            // Positioned(
+            //     bottom: height*0.0,
+            //     left: width*0.45,
+            //     child:  MaterialButton(
+            //       onPressed: (){
+            //         print('des_lat= $DEST_LOCATION');
+            //         mapController?.animateCamera(
+            //             CameraUpdate.newCameraPosition(
+            //                 CameraPosition(target: DEST_LOCATION, zoom: 17)
+            //               //17 is new zoom level
+            //             )
+            //         );
+            //       },
+            //       color: Colors.blue,
+            //       child: const Text('Done',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
+            //     ),
+            // ),
           ],
         ),
       ),
     );
   }
+
+
   Future<Null> displayPrediction(places.Prediction p) async {
-    if (p != null) {
-      places.PlacesDetailsResponse detail =
-      await _places.getDetailsByPlaceId(p.placeId!);
+    places.PlacesDetailsResponse detail =
+    await _places.getDetailsByPlaceId(p.placeId!);
 
-      var placeId = p.placeId;
-      double lat = detail.result.geometry!.location.lat;
-      double lng = detail.result.geometry!.location.lng;
+    var placeId = p.placeId;
+    double lat = detail.result.geometry!.location.lat;
+    double lng = detail.result.geometry!.location.lng;
 
-      print('displayPrediction placeId: ${p.placeId}');
-      print('displayPrediction reference: ${p.reference}');
-      print('displayPrediction description: ${p.description}');
-      print('displayPrediction types: ${p.types}');
-      print('displayPrediction terms: ${p.terms}');
+    // print('displayPrediction placeId: ${p.placeId}');
+    // print('displayPrediction reference: ${p.reference}');
+    // print('displayPrediction description: ${p.description}');
+    // print('displayPrediction types: ${p.types}');
+    // print('displayPrediction terms: ${p.terms}');
 
-      for (var i = 0; i < p.terms.length; ++i) {
-        print('displayPrediction terms[$i]: ${p.terms[i].value}');
-      }
-      print('displayPrediction matchedSubstrings: ${p.matchedSubstrings}');
+    for (var i = 0; i < p.terms.length; ++i) {
+      print('displayPrediction terms[$i]: ${p.terms[i].value}');
+    }
+    // print('displayPrediction matchedSubstrings: ${p.matchedSubstrings}');
 
 //      var address = await Geocoder.local.findAddressesFromQuery(p.description);
 
-      LatLng latLng = LatLng(lat, lng);
-      setState(() {
-        placeSelected= p.description!;
-        DEST_LOCATION = LatLng(lat, lng);
-        _markers.add(Marker(
-            markerId: const MarkerId('destPin'),
-            position: DEST_LOCATION,
-            onTap: () {
-              setState(() {
-                currentlySelectedPin = destinationPinInfo!;
-                pinPillPosition = 0;
-                print('DEST_LOCATION: $DEST_LOCATION');
-              });
-            },
-            icon: destinationIcon!));
+    LatLng latLng = LatLng(lat, lng);
+    setState(() {
+      placeSelected= p.description!;
+
+      DEST_LOCATION = LatLng(lat, lng);
+
+      _markers.add(Marker(
+          markerId: const MarkerId('destPin'),
+          position: DEST_LOCATION,
+          onTap: () {
+            setState(() {
+              currentlySelectedPin = destinationPinInfo!;
+              pinPillPosition = 0;
+              print('DEST_LOCATION: $DEST_LOCATION');
+            });
+          },
+          icon: destinationIcon!));
+
+      setInitialLocation();
 
 
-      });
-      getUDirections(lat, lng);
-
-      // markers.add( Marker( //add second marker
-      //   markerId: const MarkerId("upDated"),
-      //   position: LatLng(33.60039,73.062823), //position of marker
-      //   infoWindow: const InfoWindow( //popup info
-      //     title: 'My Custom Title ',
-      //     snippet: 'My Custom Subtitle',
-      //   ),
-      //   icon: BitmapDescriptor.defaultMarker, //Icon for Marker
-      // ));
-      //_findAddressFromLatLng(latLng);
-
-//       setState(() {
-//         _initialPosition = LatLng(latLng.latitude, latLng.longitude);
-//         String description = "";
-//         for (var i = 0; i < p.terms.length - 1; ++i) {
-//           print('displayPrediction terms[$i]: ${p.terms[i].value}');
-//           if (i == p.terms.length - 2) {
-//             description += p.terms[i].value;
-//           } else {
-//             description += p.terms[i].value + ", ";
-//           }
-//         }
-//
-// //        String description = p.description;
-// ////        if(p.description.toLowerCase().contains("united arab emirates")) {
-// ////          print('ADDRESS_REPLACE:');
-// ////          description = p.description.replaceAll("united arab emirates", "");
-// ////        }
-//         _locationController.text = description;
-//         _searchedAddress = description;
-//
-//         _latitude = latLng.latitude;
-//         _longitude = latLng.longitude;
-//
-//         _mapController!.animateCamera(
-//           CameraUpdate.newCameraPosition(
-//             CameraPosition(target: _initialPosition!, zoom: 16.0),
-//           ),
-//         );
-//
-//         final String markerIdVal = 'marker_id_$_markerIdCounter';
-//         //_markerIdCounter++;
-//         final MarkerId markerId = MarkerId(markerIdVal);
-//         final Marker marker = Marker(
-//           markerId: markerId,
-//           position: LatLng(
-//             latLng.latitude,
-//             latLng.longitude,
-//           ),
-//           onDragEnd: (position) async {
-//             setState(() {
-//               _findAddressFromLatLng(position, true);
-//             });
-//           },
-//           draggable: true,
-//           infoWindow: InfoWindow(title: p.description, snippet: ""),
-//         );
-//
-//         markers[markerId] = marker;
-//       });
-    }
+    });
   }
 
   void onError(places.PlacesAutocompleteResponse response) {
@@ -384,45 +383,6 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
     print('Direction Api');
   }
 
-  // void setPolylines() async {
-  //   PolylineResult result = await polylinePoints!.getRouteBetweenCoordinates(
-  //     googleAPIKey,
-  //       PointLatLng(currentLocation!.latitude!, currentLocation!.longitude!),
-  //       PointLatLng(destinationLocation!.latitude!, destinationLocation!.longitude!),
-  //       travelMode: TravelMode.driving,
-  //       wayPoints: [PolylineWayPoint(location: "Sabo, Yaba Lagos Nigeria")]);
-  //
-  //   if (result.points.isNotEmpty) {
-  //     for (var point in result.points) {
-  //       polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-  //     }
-  //
-  //     setState(() {
-  //       _polylines.add(Polyline(
-  //           width: 2, // set the width of the polylines
-  //           polylineId: const PolylineId("poly"),
-  //           color: const Color.fromARGB(255, 255, 50, 50),
-  //           visible: true,
-  //           points: polylineCoordinates));
-  //       print(polylineCoordinates);
-  //     });
-  //   }
-  // }
-
-  // _getPolyline() async {
-  //   PolylineResult result = await polylinePoints!.getRouteBetweenCoordinates(
-  //       googleAPIKey,
-  //       PointLatLng(currentLocation!.latitude!, currentLocation!.longitude!),
-  //       PointLatLng(destinationLocation!.latitude!, destinationLocation!.longitude!),
-  //       travelMode: TravelMode.driving,
-  //       wayPoints: [PolylineWayPoint(location: "Sabo, Yaba Lagos Nigeria")]);
-  //   if (result.points.isNotEmpty) {
-  //     result.points.forEach((PointLatLng point) {
-  //       polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-  //     });
-  //   }
-  //   _addPolyLine();
-  // }
 
   getDirections() async {
     List<LatLng> polylineCoordinates = [];
@@ -435,9 +395,9 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
     );
 
     if (result.points.isNotEmpty) {
-      result.points.forEach((PointLatLng point) {
+      for (var point in result.points) {
         polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      });
+      }
       if (kDebugMode) {
         print(polylineCoordinates);
       }
@@ -465,51 +425,9 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
       distance = totalDistance;
     });
     addPolyLine(polylineCoordinates);
+    // addextraPolyline(polylineCoordinates);
   }
-
-  getUDirections( lat,  lng) async {
-    List<LatLng> polylineCoordinates = [];
-
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      googleAPIKey,
-      PointLatLng(currentLocation!.latitude!,currentLocation!.longitude!),
-      PointLatLng(lat.latitude, lng.longitude),
-      travelMode: TravelMode.driving,
-    );
-
-    if (result.points.isNotEmpty) {
-      result.points.forEach((PointLatLng point) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      });
-      if (kDebugMode) {
-        print(polylineCoordinates);
-      }
-    } else {
-      if (kDebugMode) {
-        print(result.errorMessage);
-      }
-    }
-
-
-    double totalDistance = 0;
-    for(var i = 0; i < polylineCoordinates.length-1; i++){
-      totalDistance += calculateDistance(
-          polylineCoordinates[i].latitude,
-          polylineCoordinates[i].longitude,
-          polylineCoordinates[i+1].latitude,
-          polylineCoordinates[i+1].longitude);
-    }
-
-    if (kDebugMode) {
-      print(totalDistance);
-    }
-
-    setState(() {
-      distance = totalDistance;
-    });
-    addPolyLine(polylineCoordinates);
-  }
-
+  
   double calculateDistance(lat1, lon1, lat2, lon2){
     var p = 0.017453292519943295;
     var a = 0.5 - cos((lat2 - lat1) * p)/2 +
@@ -527,7 +445,9 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
       width: 5,
     );
     polylines[id] = polyline;
-    setState(() {});
+    setState(() {
+      _getPlace();
+    });
   }
 
   void updatePinOnMap() async {

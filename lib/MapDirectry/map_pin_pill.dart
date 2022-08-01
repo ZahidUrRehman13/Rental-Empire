@@ -5,8 +5,10 @@ class MapPinPillComponent extends StatefulWidget {
 
   double? pinPillPosition;
   PinInformation? currentlySelectedPin;
+  String? source;
+  String? destination;
 
-  MapPinPillComponent({ this.pinPillPosition, this.currentlySelectedPin});
+  MapPinPillComponent({ this.pinPillPosition, this.currentlySelectedPin,this.source,this.destination});
 
   @override
   State<StatefulWidget> createState() => MapPinPillComponentState();
@@ -40,19 +42,20 @@ class MapPinPillComponentState extends State<MapPinPillComponent> {
             children: <Widget>[
               Container(
                 width: 50, height: 50,
-                margin: EdgeInsets.only(left: 10),
+                margin: const EdgeInsets.only(left: 10),
                 child: ClipOval(child: Image.asset(widget.currentlySelectedPin!.avatarPath!, fit: BoxFit.cover )),
               ),
               Expanded(
                 child: Container(
-                  margin: EdgeInsets.only(left: 20),
+                  margin: const EdgeInsets.only(left: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
+                      const SizedBox(height: 15.0,),
                       Text(widget.currentlySelectedPin!.locationName!, style: TextStyle(color: widget.currentlySelectedPin!.labelColor)),
-                      Text('Latitude: ${widget.currentlySelectedPin!.location!.latitude.toString()}', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                      Text('Longitude: ${widget.currentlySelectedPin!.location!.longitude.toString()}', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      // Text('Address ${widget.source}', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      Expanded(child: Text(widget.currentlySelectedPin!.locationName =="Start Location" ? widget.source.toString() : widget.destination.toString(), style: const TextStyle(fontSize: 12, color: Colors.grey))),
                     ],
                   ),
                 ),
