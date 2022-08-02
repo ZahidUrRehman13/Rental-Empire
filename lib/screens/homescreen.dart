@@ -137,6 +137,7 @@ class _HomePageState extends State<HomePage>
         child: AppBar(
           title: Text(widget.title),
           elevation: 0.0,
+          backgroundColor: const Color(0xFF072A6C),
           actions: [
             IconButton(
                 onPressed: () {
@@ -268,6 +269,7 @@ class _HomePageState extends State<HomePage>
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+
       floatingActionButton: AvatarGlow(
         animate: _isListening,
         glowColor: Theme.of(context).primaryColor,
@@ -276,6 +278,7 @@ class _HomePageState extends State<HomePage>
         repeatPauseDuration: const Duration(milliseconds: 100),
         repeat: true,
         child: FloatingActionButton(
+          backgroundColor: const Color(0xFF072A6C),
           onPressed: _listen,
           child: Icon(_isListening ? Icons.stop : Icons.mic),
         ),

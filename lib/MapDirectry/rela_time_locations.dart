@@ -1,22 +1,33 @@
+import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geocoding/geocoding.dart' as g;
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:location/location.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:google_maps_webservice/places.dart' as places;
+import 'package:permission_handler/permission_handler.dart'as pr;
+import 'package:provider/provider.dart';
 import 'package:translation_rental/MapDirectry/pin_pill_info.dart';
 import 'package:google_api_headers/google_api_headers.dart';
+
+import 'package:flutter/src/scheduler/ticker.dart';
+import 'package:future_progress_dialog/future_progress_dialog.dart';
+import 'package:translation_rental/screens/homescreen.dart';
 
 
 import 'map_pin_pill.dart';
 
-const double CAMERA_ZOOM = 16;
+const double CAMERA_ZOOM = 13;
 const double CAMERA_TILT = 80;
 const double CAMERA_BEARING = 30;
 
@@ -37,8 +48,8 @@ final searchScaffoldKey = GlobalKey<ScaffoldState>();
 
 class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
 
-  LatLng SOURCE_LOCATION = LatLng(42.747932, -71.167889);
-  LatLng DEST_LOCATION = LatLng(33.660012,73.083322);
+  LatLng SOURCE_LOCATION = const LatLng(42.747932, -71.167889);
+  LatLng DEST_LOCATION = const LatLng(33.660012,73.083322);
 
   final Completer<GoogleMapController> _controller = Completer();
   GoogleMapController? mapController;
@@ -48,22 +59,14 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
   PolylinePoints polylinePoints = PolylinePoints();
 
   String googleAPIKey = "AIzaSyAdTVcCmEfa3BbkGHe8SK2EFjtM66v1CO8";
-  Set<Marker> markers = {}; //markers for google map
+  // Set<Marker> markers = {}; //markers for google map
   Map<PolylineId, Polyline> polylines = {};
-  final Set<Polyline> _polyline = {};
 
   List<LatLng> polylineCoordinates = [];
-  // PolylinePoints? polylinePoints;
-  // String googleAPIKey = '<AIzaSyAdTVcCmEfa3BbkGHe8SK2EFjtM66v1CO8>';
-// for my custom marker pins
   BitmapDescriptor? sourceIcon;
   BitmapDescriptor? destinationIcon;
-// the user's initial location and current location
-// as it moves
   LocationData? currentLocation;
-// a reference to the destination location
   LocationData? destinationLocation;
-// wrapper around the location API
   Location? location;
   double pinPillPosition = -100;
   PinInformation currentlySelectedPin = PinInformation(
@@ -78,33 +81,50 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
   double distance = 0.0;
 
 
-  places.GoogleMapsPlaces _places = places.GoogleMapsPlaces(apiKey: kGoogleApiKey);
+  final places.GoogleMapsPlaces _places = places.GoogleMapsPlaces(apiKey: kGoogleApiKey);
 
   String placeSelected="";
 
   String _address = "";
+  bool? permissionGranted;
+
 
   @override
   void initState() {
     super.initState();
 
-    // create an instance of Location
-    location =  Location();
-    polylinePoints = PolylinePoints();
+      location =  Location();
+      polylinePoints = PolylinePoints();
 
-    // subscribe to changes in the user's location
-    // by "listening" to the location's onLocationChanged event
-    location!.onLocationChanged.listen((LocationData cLoc) {
-      // cLoc contains the lat and long of the
-      // current user's position in real time,
-      // so we're holding on to it
-      currentLocation = cLoc;
-      updatePinOnMap();
-    });
-    // set custom marker pins
-    setSourceAndDestinationIcons();
-    // set the initial location
+      // subscribe to changes in the user's location
+      // by "listening" to the location's onLocationChanged event
+      location!.onLocationChanged.listen((LocationData cLoc) {
+        // cLoc contains the lat and long of the
+        // current user's position in real time,
+        // so we're holding on to it
+        currentLocation = cLoc;
+        updatePinOnMap();
+        currentLoc();
+      });
+      // set custom marker pins
+      setSourceAndDestinationIcons();
 
+      // set the initial location
+
+
+
+
+  }
+
+  Future _getLocationPermission() async {
+    if (await pr.Permission.location.request().isGranted) {
+      permissionGranted = true;
+    } else if (await pr.Permission.location.request().isPermanentlyDenied) {
+      throw('location.request().isPermanentlyDenied');
+    } else if (await pr.Permission.location.request().isDenied) {
+      throw('location.request().isDenied');
+      permissionGranted = false;
+    }
   }
 
   void setSourceAndDestinationIcons() async {
@@ -121,6 +141,37 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
     });
   }
 
+  void currentLoc()async{
+    currentLocation = await location!.getLocation();
+    var pinPosition =
+    LatLng(currentLocation!.latitude!, currentLocation!.longitude!);
+
+    sourcePinInfo = PinInformation(
+        locationName: "Start Location",
+        location: SOURCE_LOCATION,
+        pinPath: "assets/images/driving_pin.png",
+        avatarPath: "assets/images/friend1.jpg",
+        labelColor: Colors.blueAccent);
+    mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(
+            CameraPosition(target: pinPosition, zoom: 13)
+          //17 is new zoom level
+        )
+    );
+
+    // add the initial source location pin
+    _markers.add(Marker(
+        markerId: MarkerId('sourcePin'),
+        position: pinPosition,
+        onTap: () {
+          setState(() {
+            currentlySelectedPin = sourcePinInfo!;
+            pinPillPosition = 0;
+          });
+        },
+        icon: sourceIcon!));
+  }
+
   void setInitialLocation() async {
     // set the initial location by pulling the user's
     // current location from the location's getLocation()
@@ -131,6 +182,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
       "latitude": DEST_LOCATION.latitude,
       "longitude": DEST_LOCATION.longitude
     });
+
     showPinsOnMap();
   }
 
@@ -184,6 +236,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
                 polylines:  Set<Polyline>.of(polylines.values),
                 // polylines:  _polyline,
                 mapType: MapType.normal,
+
                 initialCameraPosition: initialCameraPosition,
                 onTap: (LatLng loc) {
                   pinPillPosition = -100;
@@ -191,15 +244,12 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
                 onMapCreated: (GoogleMapController controller) {
                   // controller.setMapStyle(Utils.mapStyles);
                   setState(() {
-                    // if(placeSelected!=""){
                       _controller.complete(controller);
-                    // }
 
-                    // mapController=controller;
-                    // showPinsOnMap();
+                    mapController=controller;
+
+                    //showPinsOnMap();
                   });
-                  // my map has completed being created;
-                  // i'm ready to show the pins on the map
 
                 }
 
@@ -217,36 +267,37 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
                   ),
                 )
             ),
-            GestureDetector(
-              onTap: ()async{
-                places.Prediction? p = await PlacesAutocomplete.show(
-                    context: context,
-                    apiKey: kGoogleApiKey,
-                    types: [],
-                    components: [],
-                    mode: Mode.overlay,
-                    strictbounds: false);
-                //_isSearchingAddress = true;
-                displayPrediction(p!);
+            Positioned(
+                left: width*0.23,
+                top: 10,
+                right: width*0.23,
+              child: GestureDetector(
+                onTap: ()async{
+                    places.Prediction? p = await PlacesAutocomplete.show(
+                        context: context,
+                        apiKey: kGoogleApiKey,
+                        types: [],
+                        components: [],
+                        mode: Mode.overlay,
+                        strictbounds: false);
+                    //_isSearchingAddress = true;
+                    displayPrediction(p!);
 
-              },
-              child: Padding(
-                padding: EdgeInsets.only(left: width*0.23,top: 10),
+
+                },
                 child: Container(
-                    width: width*0.6,
-                    height: height*0.08,
 
                     decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(5),
                         color: Colors.white
                     ),
-                    child:  Center(child: Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                    child:  Padding(
+                      padding: const EdgeInsets.all(8.0),
                         child: Text(placeSelected == "" ?'Pick Destination address':placeSelected,style: const TextStyle(
-                          fontWeight: FontWeight.bold
-                        ),),
-                      ),
+                      fontWeight: FontWeight.bold,
+
+                    ),
+                          textAlign: TextAlign.center,
                     ))
                 ),
               ),
@@ -256,6 +307,10 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
               currentlySelectedPin: currentlySelectedPin,
               source: _address,
               destination: placeSelected,),
+            Visibility(
+              visible: Provider.of<InternetConnectionStatus>(context)==InternetConnectionStatus.disconnected,
+              child: const Center(child: Text('No Internet Connection')),
+            )
             // Positioned(
             //     bottom: height*0.0,
             //     left: width*0.45,
@@ -306,7 +361,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
       placeSelected= p.description!;
 
       DEST_LOCATION = LatLng(lat, lng);
-
+      showProgressWithoutMsg(context);
       _markers.add(Marker(
           markerId: const MarkerId('destPin'),
           position: DEST_LOCATION,
@@ -357,7 +412,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
 
     // add the initial source location pin
     _markers.add(Marker(
-        markerId: MarkerId('sourcePin'),
+        markerId: const MarkerId('sourcePin'),
         position: pinPosition,
         onTap: () {
           setState(() {
@@ -380,7 +435,6 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
     // set the route lines on the map from source to destination
     // for more info follow this tutorial
     getDirections();
-    print('Direction Api');
   }
 
 
@@ -423,8 +477,9 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
 
     setState(() {
       distance = totalDistance;
+      addPolyLine(polylineCoordinates);
     });
-    addPolyLine(polylineCoordinates);
+
     // addextraPolyline(polylineCoordinates);
   }
   
@@ -440,7 +495,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
     PolylineId id = const PolylineId("poly");
     Polyline polyline = Polyline(
       polylineId: id,
-      color: Colors.red,
+      color: Colors.redAccent,
       points: polylineCoordinates,
       width: 5,
     );
@@ -475,7 +530,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
       // and add it again at the updated location
       _markers.removeWhere((m) => m.markerId.value == 'sourcePin');
       _markers.add(Marker(
-          markerId: MarkerId('sourcePin'),
+          markerId: const MarkerId('sourcePin'),
           onTap: () {
             setState(() {
               currentlySelectedPin = sourcePinInfo!;
@@ -484,6 +539,56 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
           },
           position: pinPosition, // updated position
           icon: sourceIcon!));
+      // if(currentLocation!.latitude!.compareTo(destinationLocation!.latitude!)==00.0000 &&currentLocation!.longitude!.compareTo(destinationLocation!.longitude!)==00.000 ) {
+      //
+      // }
+      if(destinationLocation!=null){
+        if(destinationLocation!.latitude == currentLocation!.latitude && destinationLocation!.longitude == currentLocation!.longitude ) {
+          _displayDialog(context);
+        }
+      }
+    });
+  }
+
+  _displayDialog(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Expanded(
+          child: AlertDialog(
+            title: const Text('Thanks!'),
+            content: const Text('You are safely reached to your destination'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('YES', style: TextStyle(color: Colors.black),),
+              ),
+              // TextButton(
+              //   onPressed: () {
+              //     Navigator.of(context).pop();
+              //   },
+              //   child: Text('NO', style: TextStyle(color: Colors.black),),
+              // ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> showProgressWithoutMsg(BuildContext context) async {
+    await showDialog(
+      context: context,
+      builder: (context) =>
+          FutureProgressDialog(getFuture()),
+    );
+  }
+  Future getFuture() {
+    return Future(() async {
+      await Future.delayed(const Duration(seconds: 4));
+      return '';
     });
   }
 

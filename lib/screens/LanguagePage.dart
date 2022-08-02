@@ -208,10 +208,10 @@ class _LanguagePageState extends State <LanguagePage>{
           SliverStickyHeader(
             header: Container(
               height: 60.0,
-              color: Colors.blue,
+              color: const Color(0xFF072A6C),
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               alignment: Alignment.centerLeft,
-              child: Text(
+              child: const Text(
                 'Recent Languages',
                 style: TextStyle(
                   color: Colors.white,
@@ -233,10 +233,10 @@ class _LanguagePageState extends State <LanguagePage>{
           SliverStickyHeader(
             header: Container(
               height: 60.0,
-              color: Colors.blue,
+              color: const Color(0xFF072A6C),
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               alignment: Alignment.centerLeft,
-              child: Text(
+              child: const Text(
                 'All languages',
                 style: TextStyle(
                   color: Colors.white,
@@ -270,32 +270,32 @@ class _LanguagePageState extends State <LanguagePage>{
       body: Column(
         children: [
           Container(
-            margin: EdgeInsets.only(
+            margin: const EdgeInsets.only(
               top: 12.0,
               bottom: 12.0,
               left: 8.0,
               right: 8.0,
             ),
             child: TextField(
-              controller: this._searchTextController,
+              controller: _searchTextController,
               onChanged: (text) {
                 setState(() {});
               },
               decoration: InputDecoration(
                 hintText: "Search",
                 border: InputBorder.none,
-                focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue)),
-                prefixIcon: Icon(
+                focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF072A6C))),
+                prefixIcon: const Icon(
                   Icons.search,
                   size: 24.0,
                   color: Colors.grey,
                 ),
-                suffixIcon: this._displayDeleteTextIcon(),
+                suffixIcon: _displayDeleteTextIcon(),
               ),
             ),
           ),
-          this._displayTheRightList(),
+          _displayTheRightList(),
         ],
       ),
     );

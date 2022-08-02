@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:provider/provider.dart';
 
 import 'screens/homescreen.dart';
 
@@ -24,14 +26,20 @@ class _MyAppState extends State<MyApp> {
   // }
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Translation Rental',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        primaryColor: Colors.blue[600],
+    return StreamProvider<InternetConnectionStatus>(
+      initialData: InternetConnectionStatus.connected,
+      create: (_){
+        return InternetConnectionChecker().onStatusChange;
+      },
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Translation Rental',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          primaryColor: Colors.blue[600],
+        ),
+        home: const HomePage(title: 'Translation Rental'),
       ),
-      home: const HomePage(title: 'Translation Rental'),
     );
   }
 }
