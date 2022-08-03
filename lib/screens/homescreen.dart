@@ -6,6 +6,8 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -122,6 +124,7 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     var height = MediaQuery.of(context).size.height;
+    var width = MediaQuery.of(context).size.width;
     Future _speak(String text) async {
       await flutterTts.setLanguage(_secondLanguage.code!);
       await flutterTts.setPitch(0.5);
@@ -265,7 +268,19 @@ class _HomePageState extends State<HomePage>
           Visibility(
               visible: _textEditingController.text != "",
               child: const Divider()),
-          const Spacer()
+          const Spacer(),
+          Visibility(
+            visible: Provider.of<InternetConnectionStatus>(context)==InternetConnectionStatus.disconnected,
+            child:  Container(
+                alignment: Alignment.bottomCenter,
+                color: Colors.grey,
+                padding:const EdgeInsets.all(16.0),
+                child:  const Center(child: Text('Check your Internet Connection',style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18.0
+                ),))),
+          ),
+
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,

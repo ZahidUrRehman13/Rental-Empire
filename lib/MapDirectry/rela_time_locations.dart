@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -86,7 +87,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
   String placeSelected="";
 
   String _address = "";
-  bool? permissionGranted;
+
 
 
   @override
@@ -96,18 +97,34 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
       location =  Location();
       polylinePoints = PolylinePoints();
 
-      // subscribe to changes in the user's location
-      // by "listening" to the location's onLocationChanged event
+
       location!.onLocationChanged.listen((LocationData cLoc) {
-        // cLoc contains the lat and long of the
-        // current user's position in real time,
-        // so we're holding on to it
         currentLocation = cLoc;
         updatePinOnMap();
-        currentLoc();
+
+
       });
-      // set custom marker pins
+    Connectivity().onConnectivityChanged.listen((ConnectivityResult result) async {
+      if(result != ConnectivityResult.none) {
+        setState(() {
+          var pinPosition1 =
+          const LatLng(00.0000,00.0000);
+          mapController?.animateCamera(
+              CameraUpdate.newCameraPosition(
+                  CameraPosition(target: pinPosition1, zoom: 17)
+                //17 is new zoom level
+              )
+          );
+          currentLoc();
+        });
+      }
+    });
       setSourceAndDestinationIcons();
+
+    _checkGps();
+
+    currentLoc();
+
 
       // set the initial location
 
@@ -116,16 +133,55 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
 
   }
 
-  Future _getLocationPermission() async {
-    if (await pr.Permission.location.request().isGranted) {
-      permissionGranted = true;
-    } else if (await pr.Permission.location.request().isPermanentlyDenied) {
-      throw('location.request().isPermanentlyDenied');
-    } else if (await pr.Permission.location.request().isDenied) {
-      throw('location.request().isDenied');
-      permissionGranted = false;
+  Future _checkGps() async {
+    if (!await location!.serviceEnabled()) {
+      await location!.requestService().then((value) {
+        setState(() {
+          currentLoc();
+        });
+      });
     }
   }
+
+  // void _getLocationPermission() async {
+  //
+  //   if(await pr.Permission.location.serviceStatus.isEnabled){
+  //     currentLoc();
+  //   }else {
+  //     try {
+  //
+  //       setState(() {
+  //         currentLocation1 = location!.getLocation;
+  //         currentLoc();
+  //       });
+  //       print('try executed');
+  //     } on PlatformException {
+  //       await showDialog<dynamic>(
+  //           context: context,
+  //           builder: (context) {
+  //             return AlertDialog(
+  //               title: const Text("No Location"),
+  //               content: const Text(
+  //                   "Please allow this App to use Location or turn on your GPS."),
+  //               actions: <Widget>[
+  //                 FlatButton(
+  //                   child: const Text(
+  //                       "Ok"
+  //                   ),
+  //                   onPressed: () {
+  //                     Navigator.of(context).pop();
+  //                     setState(() {
+  //                       currentLoc();
+  //                     });
+  //                     print('permission Dialog');
+  //                   },
+  //                 )
+  //               ],
+  //             );
+  //           });
+  //     }
+  //   }
+  // }
 
   void setSourceAndDestinationIcons() async {
     BitmapDescriptor.fromAssetImage(
@@ -230,6 +286,8 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
 
             GoogleMap(
                 myLocationEnabled: true,
+                zoomGesturesEnabled: true,
+                minMaxZoomPreference: const MinMaxZoomPreference(13,17),
                 compassEnabled: true,
                 tiltGesturesEnabled: false,
                 markers: _markers,
@@ -249,6 +307,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
                     mapController=controller;
 
                     //showPinsOnMap();
+                   // currentLoc();
                   });
 
                 }
@@ -273,6 +332,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
                 right: width*0.23,
               child: GestureDetector(
                 onTap: ()async{
+
                     places.Prediction? p = await PlacesAutocomplete.show(
                         context: context,
                         apiKey: kGoogleApiKey,
@@ -309,7 +369,24 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
               destination: placeSelected,),
             Visibility(
               visible: Provider.of<InternetConnectionStatus>(context)==InternetConnectionStatus.disconnected,
-              child: const Center(child: Text('No Internet Connection')),
+              child:  Container(
+                alignment: Alignment.center,
+                  color: Colors.grey,
+                  padding:const EdgeInsets.all(16.0),
+                  child:  Container(
+                    height: height*0.08,
+                    width: width*0.8,
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(35),
+                        color: Colors.white12
+                    ),
+                    child: const Center(
+                      child: Text('Check your Internet Connection',style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18.0
+                      ),),
+                    ),
+                  )),
             )
             // Positioned(
             //     bottom: height*0.0,

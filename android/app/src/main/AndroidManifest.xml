@@ -13,7 +13,7 @@
         </intent>
     </queries>
    <application
-        android:label="Translation Rental"
+        android:label="Rental Empire"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
