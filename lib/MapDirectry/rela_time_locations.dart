@@ -28,7 +28,7 @@ import 'package:translation_rental/screens/homescreen.dart';
 
 import 'map_pin_pill.dart';
 
-const double CAMERA_ZOOM = 13;
+const double CAMERA_ZOOM = 18;
 const double CAMERA_TILT = 80;
 const double CAMERA_BEARING = 30;
 
@@ -123,10 +123,8 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
 
     _checkGps();
 
-    currentLoc();
+    // currentLoc();
 
-
-      // set the initial location
 
 
 
@@ -287,7 +285,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
             GoogleMap(
                 myLocationEnabled: true,
                 zoomGesturesEnabled: true,
-                minMaxZoomPreference: const MinMaxZoomPreference(13,17),
+                // minMaxZoomPreference: const MinMaxZoomPreference(13,17),
                 compassEnabled: true,
                 tiltGesturesEnabled: false,
                 markers: _markers,
@@ -369,24 +367,21 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
               destination: placeSelected,),
             Visibility(
               visible: Provider.of<InternetConnectionStatus>(context)==InternetConnectionStatus.disconnected,
-              child:  Container(
-                alignment: Alignment.center,
-                  color: Colors.grey,
-                  padding:const EdgeInsets.all(16.0),
-                  child:  Container(
-                    height: height*0.08,
-                    width: width*0.8,
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(35),
-                        color: Colors.white12
-                    ),
-                    child: const Center(
+              child:  Positioned(
+                bottom: height*0.0,
+                // left: width*0.25,
+                child: Container(
+                    height: height*0.03,
+                    width: width,
+                    color: Colors.grey,
+                    // padding:const EdgeInsets.all(16.0),
+                    child:  const Center(
                       child: Text('Check your Internet Connection',style: TextStyle(
                         color: Colors.white,
-                        fontSize: 18.0
+                        fontSize: 12.0
                       ),),
-                    ),
-                  )),
+                    )),
+              ),
             )
             // Positioned(
             //     bottom: height*0.0,
@@ -439,17 +434,17 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
 
       DEST_LOCATION = LatLng(lat, lng);
       showProgressWithoutMsg(context);
-      _markers.add(Marker(
-          markerId: const MarkerId('destPin'),
-          position: DEST_LOCATION,
-          onTap: () {
-            setState(() {
-              currentlySelectedPin = destinationPinInfo!;
-              pinPillPosition = 0;
-              print('DEST_LOCATION: $DEST_LOCATION');
-            });
-          },
-          icon: destinationIcon!));
+      // _markers.add(Marker(
+      //     markerId: const MarkerId('destPin'),
+      //     position: DEST_LOCATION,
+      //     onTap: () {
+      //       setState(() {
+      //         currentlySelectedPin = destinationPinInfo!;
+      //         pinPillPosition = 0;
+      //         print('DEST_LOCATION: $DEST_LOCATION');
+      //       });
+      //     },
+      //     icon: destinationIcon!));
 
       setInitialLocation();
 
@@ -508,7 +503,10 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
             pinPillPosition = 0;
           });
         },
-        icon: destinationIcon!));
+      //custom icon
+        // icon: destinationIcon!));
+        icon:  BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueRed),));
     // set the route lines on the map from source to destination
     // for more info follow this tutorial
     getDirections();
@@ -619,7 +617,7 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
       // if(currentLocation!.latitude!.compareTo(destinationLocation!.latitude!)==00.0000 &&currentLocation!.longitude!.compareTo(destinationLocation!.longitude!)==00.000 ) {
       //
       // }
-      if(destinationLocation!=null){
+      if(destinationLocation!=null && currentLocation!=null){
         if(destinationLocation!.latitude == currentLocation!.latitude && destinationLocation!.longitude == currentLocation!.longitude ) {
           _displayDialog(context);
         }

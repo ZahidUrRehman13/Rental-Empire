@@ -273,11 +273,11 @@ class _HomePageState extends State<HomePage>
             visible: Provider.of<InternetConnectionStatus>(context)==InternetConnectionStatus.disconnected,
             child:  Container(
                 alignment: Alignment.bottomCenter,
+                height: height*0.03,
                 color: Colors.grey,
-                padding:const EdgeInsets.all(16.0),
                 child:  const Center(child: Text('Check your Internet Connection',style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18.0
+                    // fontSize: 12.0
                 ),))),
           ),
 

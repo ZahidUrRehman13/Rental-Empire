@@ -33,12 +33,12 @@ class _MyAppState extends State<MyApp> {
       },
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Translation Rental',
+        title: 'Rental Empire',
         theme: ThemeData(
           primarySwatch: Colors.blue,
           primaryColor: Colors.blue[600],
         ),
-        home: const HomePage(title: 'Translation Rental'),
+        home: const HomePage(title: 'Rental Empire'),
       ),
     );
   }
