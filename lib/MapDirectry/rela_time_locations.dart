@@ -131,6 +131,13 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
 
   }
 
+  void dispose(){
+    //...
+    super.dispose();
+    mapController!.dispose();
+
+  }
+
   Future _checkGps() async {
     if (!await location!.serviceEnabled()) {
       await location!.requestService().then((value) {
@@ -594,35 +601,38 @@ class _RealTimeLocationScreenState extends State<RealTimeLocationScreen> {
     controller.animateCamera(CameraUpdate.newCameraPosition(cPosition));
     // do this inside the setState() so Flutter gets notified
     // that a widget update is due
-    setState(() {
-      // updated position
-      var pinPosition =
-      LatLng(currentLocation!.latitude!, currentLocation!.longitude!);
+    if (mounted) {
+      setState(() {
+        // updated position
+        var pinPosition =
+        LatLng(currentLocation!.latitude!, currentLocation!.longitude!);
 
-      sourcePinInfo != null ? sourcePinInfo!.location = pinPosition : null;
+        sourcePinInfo != null ? sourcePinInfo!.location = pinPosition : null;
 
-      // the trick is to remove the marker (by id)
-      // and add it again at the updated location
-      _markers.removeWhere((m) => m.markerId.value == 'sourcePin');
-      _markers.add(Marker(
-          markerId: const MarkerId('sourcePin'),
-          onTap: () {
-            setState(() {
-              currentlySelectedPin = sourcePinInfo!;
-              pinPillPosition = 0;
-            });
-          },
-          position: pinPosition, // updated position
-          icon: sourceIcon!));
-      // if(currentLocation!.latitude!.compareTo(destinationLocation!.latitude!)==00.0000 &&currentLocation!.longitude!.compareTo(destinationLocation!.longitude!)==00.000 ) {
-      //
-      // }
-      if(destinationLocation!=null && currentLocation!=null){
-        if(destinationLocation!.latitude == currentLocation!.latitude && destinationLocation!.longitude == currentLocation!.longitude ) {
-          _displayDialog(context);
+        // the trick is to remove the marker (by id)
+        // and add it again at the updated location
+        _markers.removeWhere((m) => m.markerId.value == 'sourcePin');
+        _markers.add(Marker(
+            markerId: const MarkerId('sourcePin'),
+            onTap: () {
+              setState(() {
+                currentlySelectedPin = sourcePinInfo!;
+                pinPillPosition = 0;
+              });
+            },
+            position: pinPosition, // updated position
+            icon: sourceIcon!));
+        // if(currentLocation!.latitude!.compareTo(destinationLocation!.latitude!)==00.0000 &&currentLocation!.longitude!.compareTo(destinationLocation!.longitude!)==00.000 ) {
+        //
+        // }
+        if (destinationLocation != null && currentLocation != null) {
+          if (destinationLocation!.latitude == currentLocation!.latitude &&
+              destinationLocation!.longitude == currentLocation!.longitude) {
+            _displayDialog(context);
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   _displayDialog(BuildContext context) async {

@@ -53,6 +53,9 @@ class _LocationMapState extends State<LocationMap> {
     // TODO: implement initState
     super.initState();
     _cameraPosition=const CameraPosition(target: LatLng(0, 0),zoom: 10.0);
+
+    // _cameraPosition=const CameraPosition(target: LatLng(0, 0),zoom: 10.0);
+
     getCurrentLocation();
 
   }
